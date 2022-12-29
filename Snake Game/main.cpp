@@ -4,10 +4,14 @@
 #include <dwrite.h>
 #include <wincodec.h>
 #include "Sprite.h"
+#include "Board.h"
 
 #pragma comment(lib, "d2d1.lib")
 #pragma comment(lib, "dwrite.lib")
 #pragma comment(lib, "windowscodecs.lib")
+
+#define SCREEN_WIDTH		800
+#define SCREEN_HEIGHT		600
 
 //--------------------------------------------------------------------------------------
 // Global Variables
@@ -22,7 +26,12 @@ IDWriteTextFormat* g_pDWTextFormat;
 
 IWICImagingFactory* g_pWICFactory = nullptr;
 ID2D1Bitmap* g_pBitmap = nullptr;
+ID2D1Bitmap* g_pPlayerBitmap = nullptr;
 Sprite sprite;
+Board* board;
+Player* player;
+
+ID2D1Bitmap* g_pBoard = nullptr;
 
 //--------------------------------------------------------------------------------------
 // Forward declarations
@@ -65,8 +74,19 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 		return 0;
 	}
 
-	LoadBitmapFromFile(L"character.png", &g_pBitmap);
-	sprite.Add(6, 9, 37, 49);
+
+	LoadBitmapFromFile(L"board.png", &g_pBoard);
+	LoadBitmapFromFile(L"snake.png", &g_pPlayerBitmap);
+
+	player = new Player(&g_pPlayerBitmap);
+	board = new Board(&g_pBoard, player, SCREEN_WIDTH, SCREEN_HEIGHT);
+	board->Render(g_pRenderTarget);
+
+
+	//LoadBitmapFromFile(L"character.png", &g_pBitmap);
+	//sprite.Add(6, 9, 37, 49);
+
+
 
 	// Main message loop
 	MSG msg = { 0 };
@@ -79,6 +99,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 		}
 		else
 		{
+			board->Input();
+			board->Update();
 			Render();
 		}
 	}
@@ -113,7 +135,7 @@ HRESULT InitWindow(HINSTANCE hInstance, int nCmdShow)
 
 	// Create window
 	g_hInst = hInstance;
-	RECT rc = { 0, 0, 800, 600 };
+	RECT rc = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
 	AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
 
 	g_hWnd = CreateWindow(L"D2DTutWindowClass", L"D2D1 Tutorial 1 : simple app",
@@ -221,6 +243,7 @@ HRESULT LoadBitmapFromFile(PCWSTR _wcFileName, ID2D1Bitmap** _ppBitmap)
 	if (pFrame) { pFrame->Release(); pFrame = nullptr; }
 	if (pDecoder) { pDecoder->Release(); pDecoder = nullptr; }
 
+	return hr;
 }
 
 
@@ -233,7 +256,9 @@ void Render()
 	g_pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::Aqua));
 
 	//g_pRenderTarget->DrawBitmap(g_pBitmap);
-	sprite.Render(g_pRenderTarget, &g_pBitmap);
+	//sprite.Render(g_pRenderTarget, &g_pBoard);
+	//board->Render(g_pRenderTarget);
+	board->Render(g_pRenderTarget);
 
 	g_pRenderTarget->EndDraw();
 }
