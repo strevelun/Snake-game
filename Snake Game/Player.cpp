@@ -50,6 +50,7 @@ void Player::Update()
 
 	for (int i = 0; i < bodyArr.size(); i++)
 	{
+		DIR temp = bodyArr[i]->dir;
 		switch (bodyArr[i]->dir)
 		{
 		case DIR_LEFT:
@@ -83,4 +84,38 @@ void Player::Render(ID2D1HwndRenderTarget* _target)
 		ypos = info->ypos * m_size.height;
 		_target->DrawBitmap(*m_bitmap, D2D1::RectF(xpos, ypos, xpos + m_size.width, ypos + m_size.height), 1.0f, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, D2D1::RectF(0, 0, m_size.width, m_size.height));
 	}
+}
+
+void Player::AddBody()
+{
+	PosInfo* info = new PosInfo;
+
+	// 꼬리가 향하는 방향의 반대방향 위치에 추가
+	switch (bodyArr[m_bodyLength - 1]->dir)
+	{
+	case DIR_LEFT:
+		info->xpos = bodyArr[m_bodyLength - 1]->xpos + 1;
+		info->ypos = bodyArr[m_bodyLength - 1]->ypos;
+		info->dir = DIR_LEFT;
+		break;
+	case DIR_UP:
+		info->xpos = bodyArr[m_bodyLength - 1]->xpos;
+		info->ypos = bodyArr[m_bodyLength - 1]->ypos + 1;
+		info->dir = DIR_UP;
+		break;
+	case DIR_RIGHT:
+		info->xpos = bodyArr[m_bodyLength - 1]->xpos - 1;
+		info->ypos = bodyArr[m_bodyLength - 1]->ypos;
+		info->dir = DIR_RIGHT;
+		break;
+	case DIR_DOWN:
+		info->xpos = bodyArr[m_bodyLength - 1]->xpos;
+		info->ypos = bodyArr[m_bodyLength - 1]->ypos - 1;
+		info->dir = DIR_DOWN;
+		break;
+	}
+
+	bodyArr.push_back(info);
+
+	m_bodyLength++;
 }

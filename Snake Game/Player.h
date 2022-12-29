@@ -41,5 +41,7 @@ public:
 	void Input();
 	void Update();
 	void Render(ID2D1HwndRenderTarget* _target);
+
+	void AddBody();
 };
 

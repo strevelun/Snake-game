@@ -27,6 +27,7 @@ IDWriteTextFormat* g_pDWTextFormat;
 IWICImagingFactory* g_pWICFactory = nullptr;
 ID2D1Bitmap* g_pBitmap = nullptr;
 ID2D1Bitmap* g_pPlayerBitmap = nullptr;
+ID2D1Bitmap* g_pAppleBitmap = nullptr;
 Sprite sprite;
 Board* board;
 Player* player;
@@ -77,9 +78,10 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 
 	LoadBitmapFromFile(L"board.png", &g_pBoard);
 	LoadBitmapFromFile(L"snake.png", &g_pPlayerBitmap);
+	LoadBitmapFromFile(L"apple.png", &g_pAppleBitmap);
 
 	player = new Player(&g_pPlayerBitmap);
-	board = new Board(&g_pBoard, player, SCREEN_WIDTH, SCREEN_HEIGHT);
+	board = new Board(&g_pBoard, &g_pAppleBitmap, player, SCREEN_WIDTH, SCREEN_HEIGHT);
 	board->Render(g_pRenderTarget);
 
 
@@ -101,6 +103,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 		{
 			board->Input();
 			board->Update();
+			if (board->IsGameOver())
+				break;
 			Render();
 		}
 	}
