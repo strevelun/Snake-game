@@ -41,13 +41,6 @@ void Player::Input()
 
 void Player::Update()
 {
-	// 각 바디는 map 2차원 배열을 체크한다음 map에 현재위치에 있는 방향을 업데이트
-
-	if (m_dir != bodyArr[0]->dir)
-	{
-		
-	}
-
 	for (int i = 0; i < bodyArr.size(); i++)
 	{
 		DIR temp = bodyArr[i]->dir;
