@@ -1,9 +1,9 @@
 #include "Player.h"
 
-Player::Player(ID2D1Bitmap** _bitmap)
+Player::Player(ID2D1Bitmap* _bitmap)
 {
-	m_bitmap = _bitmap;
-	m_size = (*_bitmap)->GetSize();
+	m_sprite = new Sprite(_bitmap);
+	m_size = m_sprite->GetSize();
 	m_size.width /= 2;
 	m_size.height /= 2;
 
@@ -24,6 +24,7 @@ Player::Player(ID2D1Bitmap** _bitmap)
 
 Player::~Player()
 {
+	delete m_sprite;
 }
 
 PosInfo *Player::GetPosInfo(int idx) const
@@ -73,9 +74,12 @@ void Player::Render(ID2D1HwndRenderTarget* _target)
 	for (int i = 0; i < bodyArr.size(); i++)
 	{
 		PosInfo* info = bodyArr[i];
+
 		xpos = info->xpos * m_size.width;
 		ypos = info->ypos * m_size.height;
-		_target->DrawBitmap(*m_bitmap, D2D1::RectF(xpos, ypos, xpos + m_size.width, ypos + m_size.height), 1.0f, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, D2D1::RectF(0, 0, m_size.width, m_size.height));
+		m_sprite->Render(_target, D2D1::RectF(xpos, ypos, xpos + m_size.width, ypos + m_size.height));
+
+		//_target->DrawBitmap(*m_bitmap, D2D1::RectF(xpos, ypos, xpos + m_size.width, ypos + m_size.height), 1.0f, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, D2D1::RectF(0, 0, m_size.width, m_size.height));
 	}
 }
 

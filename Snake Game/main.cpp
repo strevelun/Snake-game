@@ -18,21 +18,17 @@
 //--------------------------------------------------------------------------------------
 HINSTANCE               g_hInst = nullptr;
 HWND                    g_hWnd = nullptr;
+
 ID2D1Factory* g_pD2DFactory = nullptr;
 ID2D1HwndRenderTarget* g_pRenderTarget = nullptr;
-ID2D1SolidColorBrush* g_pBrush;
-IDWriteFactory* g_pDWriteFactory;
-IDWriteTextFormat* g_pDWTextFormat;
 
 IWICImagingFactory* g_pWICFactory = nullptr;
-ID2D1Bitmap* g_pBitmap = nullptr;
-ID2D1Bitmap* g_pPlayerBitmap = nullptr;
-ID2D1Bitmap* g_pAppleBitmap = nullptr;
-Sprite sprite;
 Board* board;
 Player* player;
 
 ID2D1Bitmap* g_pBoard = nullptr;
+ID2D1Bitmap* g_pPlayerBitmap = nullptr;
+ID2D1Bitmap* g_pAppleBitmap = nullptr;
 
 //--------------------------------------------------------------------------------------
 // Forward declarations
@@ -75,20 +71,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 		return 0;
 	}
 
-
 	LoadBitmapFromFile(L"board.png", &g_pBoard);
 	LoadBitmapFromFile(L"snake.png", &g_pPlayerBitmap);
 	LoadBitmapFromFile(L"apple.png", &g_pAppleBitmap);
 
-	player = new Player(&g_pPlayerBitmap);
-	board = new Board(&g_pBoard, &g_pAppleBitmap, player, SCREEN_WIDTH, SCREEN_HEIGHT);
+	player = new Player(g_pPlayerBitmap);
+	board = new Board(g_pBoard, g_pAppleBitmap, player, SCREEN_WIDTH, SCREEN_HEIGHT);
 	board->Render(g_pRenderTarget);
-
-
-	//LoadBitmapFromFile(L"character.png", &g_pBitmap);
-	//sprite.Add(6, 9, 37, 49);
-
-
 
 	// Main message loop
 	MSG msg = { 0 };
@@ -202,18 +191,6 @@ HRESULT InitDevice(void)
 		&g_pRenderTarget);
 	if (FAILED(hr)) return hr;
 
-	hr = g_pRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &g_pBrush);
-	if (FAILED(hr)) return hr;
-
-	hr = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), reinterpret_cast<IUnknown**>(&g_pDWriteFactory));
-	if (FAILED(hr)) return hr;
-
-	static const WCHAR fontName[] = L"¹ÙÅÁ";
-	const FLOAT fontSize = 50.0f;
-
-	hr = g_pDWriteFactory->CreateTextFormat(fontName, NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, fontSize, L"en-us", &g_pDWTextFormat);
-	if (FAILED(hr)) return hr;
-
 	hr = CoCreateInstance(CLSID_WICImagingFactory, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&g_pWICFactory));
 	if (FAILED(hr)) return hr;
 
@@ -272,12 +249,14 @@ void Render()
 //--------------------------------------------------------------------------------------
 void CleanupDevice()
 {
-	if (g_pBitmap) g_pBitmap->Release();
+	delete player;
+	delete board;
+
+	if (g_pAppleBitmap) g_pAppleBitmap->Release();
+	if (g_pPlayerBitmap) g_pPlayerBitmap->Release();
+	if (g_pBoard) g_pBoard->Release();
 	if (g_pWICFactory) g_pWICFactory->Release();
-	if (g_pBrush) g_pBrush->Release();
-	if (g_pDWTextFormat) g_pDWTextFormat->Release();
 	if (g_pRenderTarget) g_pRenderTarget->Release();
-	if (g_pDWriteFactory) g_pDWriteFactory->Release();
 	if (g_pD2DFactory) g_pD2DFactory->Release();
 	CoUninitialize();
 }

@@ -2,6 +2,7 @@
 
 #include <d2d1.h>
 #include <vector>
+#include "Sprite.h"
 
 // 맨 앞 헤드가 방향을 표시해두면 그 뒤에 있던 몸통이 그 방향대로 따라가는 방식
 // 방향키를 누르는 순간 map의 그 자리에 dir를 표시해둔다. 그리고 헤드는 
@@ -27,13 +28,13 @@ class Player
 {
 	DIR m_dir = DIR_RIGHT;
 	int m_xpos = 0, m_ypos = 0;
-	ID2D1Bitmap** m_bitmap = nullptr;
+	Sprite* m_sprite;
 	D2D1_SIZE_F m_size;
 	int m_bodyLength = 4;
 	std::vector<PosInfo*> bodyArr;
 
 public:
-	Player(ID2D1Bitmap** m_bitmap);
+	Player(ID2D1Bitmap* m_bitmap);
 	~Player();
 
 	int GetBodyLength() const { return m_bodyLength; }
