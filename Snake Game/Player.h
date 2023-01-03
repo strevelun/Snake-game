@@ -9,6 +9,9 @@
 // 바로 방향을 바꿔서 아래로 내려감. 뒤따라오던 몸통은 오른쪽으로만 가다가 
 // 즉 몸통들은 항상 map을 체크하고 있음.
 
+class CBitmap;
+class CAnimator;
+
 enum DIR
 {
 	DIR_NONE,
@@ -28,13 +31,16 @@ class Player
 {
 	DIR m_dir = DIR_RIGHT;
 	int m_xpos = 0, m_ypos = 0;
-	Sprite* m_sprite;
+	//Sprite* m_sprite;
+	CBitmap* m_bitmap;
 	D2D1_SIZE_F m_size;
 	int m_bodyLength = 4;
 	std::vector<PosInfo*> bodyArr;
 
+	CAnimator* m_animator = nullptr;
+
 public:
-	Player(ID2D1Bitmap* m_bitmap);
+	Player(CBitmap* m_bitmap);
 	~Player();
 
 	int GetBodyLength() const { return m_bodyLength; }

@@ -128,12 +128,20 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Board.cpp" />
+    <ClCompile Include="CAnimationClip.cpp" />
+    <ClCompile Include="CAnimator.cpp" />
+    <ClCompile Include="CBitmap.cpp" />
+    <ClCompile Include="CFrameTime.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="Sprite.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Board.h" />
+    <ClInclude Include="CAnimationClip.h" />
+    <ClInclude Include="CAnimator.h" />
+    <ClInclude Include="CBitmap.h" />
+    <ClInclude Include="CFrameTime.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="Sprite.h" />
   </ItemGroup>

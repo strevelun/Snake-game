@@ -1,10 +1,19 @@
 #include "Player.h"
+#include "CBitmap.h"
+#include "CAnimator.h"
+#include "CAnimationClip.h"
 
-Player::Player(ID2D1Bitmap* _bitmap)
+Player::Player(CBitmap* _bitmap)
 {
-	m_sprite = new Sprite(_bitmap);
-	m_size = m_sprite->GetSize();
-	m_size.width /= 2;
+	m_animator = new CAnimator();
+	CAnimationClip* clip = new CAnimationClip(_bitmap->GetBitmap(), 2, true);
+	clip->AddSprite(D2D1::RectF(0, 0, 100, 100));
+	clip->AddSprite(D2D1::RectF(100, 0, 200, 100));
+	m_animator->AddClip("Run", clip); // TODO ENUM
+
+	m_bitmap = _bitmap;
+	m_size = _bitmap->GetSize();
+	m_size.width /= 4;
 	m_size.height /= 2;
 
 	// 머리 시작 위치 좌표
@@ -24,7 +33,7 @@ Player::Player(ID2D1Bitmap* _bitmap)
 
 Player::~Player()
 {
-	delete m_sprite;
+	//delete m_sprite;
 }
 
 PosInfo *Player::GetPosInfo(int idx) const
@@ -42,6 +51,8 @@ void Player::Input()
 
 void Player::Update()
 {
+	if (bodyArr[0]->dir == 0) return;
+
 	for (int i = 0; i < bodyArr.size(); i++)
 	{
 		DIR temp = bodyArr[i]->dir;
@@ -77,9 +88,12 @@ void Player::Render(ID2D1HwndRenderTarget* _target)
 
 		xpos = info->xpos * m_size.width;
 		ypos = info->ypos * m_size.height;
-		m_sprite->Render(_target, D2D1::RectF(xpos, ypos, xpos + m_size.width, ypos + m_size.height));
+		D2D1_RECT_F rect = D2D1::RectF(xpos, ypos, xpos + m_size.width, ypos + m_size.height);
 
-		//_target->DrawBitmap(*m_bitmap, D2D1::RectF(xpos, ypos, xpos + m_size.width, ypos + m_size.height), 1.0f, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, D2D1::RectF(0, 0, m_size.width, m_size.height));
+		if (m_animator == nullptr)
+			m_bitmap->Render(_target, xpos, ypos, xpos + m_size.width, ypos + m_size.height);
+		else
+			m_animator->Play("Run", _target, rect);
 	}
 }
 

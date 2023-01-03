@@ -2,13 +2,14 @@
 #include <windows.h>
 #include <d2d1.h>
 #include <dwrite.h>
-#include <wincodec.h>
 #include "Sprite.h"
 #include "Board.h"
+#include "CFrameTime.h"
+#include "CBitmap.h"
+#include <string>
 
 #pragma comment(lib, "d2d1.lib")
 #pragma comment(lib, "dwrite.lib")
-#pragma comment(lib, "windowscodecs.lib")
 
 #define SCREEN_WIDTH		800
 #define SCREEN_HEIGHT		600
@@ -22,14 +23,16 @@ HWND                    g_hWnd = nullptr;
 ID2D1Factory* g_pD2DFactory = nullptr;
 ID2D1HwndRenderTarget* g_pRenderTarget = nullptr;
 
-IWICImagingFactory* g_pWICFactory = nullptr;
+IDWriteFactory* g_pDWriteFactory;
+IDWriteTextFormat* g_pDWTextFormat;
+
 Board* board;
 Player* player;
 
 ID2D1Bitmap* g_pBoard = nullptr;
-ID2D1Bitmap* g_pPlayerBitmap = nullptr;
 ID2D1Bitmap* g_pAppleBitmap = nullptr;
 
+ID2D1SolidColorBrush* g_pBlackBrush;
 //--------------------------------------------------------------------------------------
 // Forward declarations
 //--------------------------------------------------------------------------------------
@@ -38,9 +41,6 @@ HRESULT InitDevice(void);
 void CleanupDevice(void);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 void Render(void);
-
-HRESULT LoadBitmapFromFile(PCWSTR _wcFileName, ID2D1Bitmap** _ppBitmap);
-
 
 
 template<class Interface>
@@ -71,12 +71,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 		return 0;
 	}
 
-	LoadBitmapFromFile(L"board.png", &g_pBoard);
-	LoadBitmapFromFile(L"snake.png", &g_pPlayerBitmap);
-	LoadBitmapFromFile(L"apple.png", &g_pAppleBitmap);
 
-	player = new Player(g_pPlayerBitmap);
-	board = new Board(g_pBoard, g_pAppleBitmap, player, SCREEN_WIDTH, SCREEN_HEIGHT);
+	board = new Board(g_pRenderTarget, SCREEN_WIDTH, SCREEN_HEIGHT);
+
 	board->Render(g_pRenderTarget);
 
 	// Main message loop
@@ -90,11 +87,19 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 		}
 		else
 		{
+			//CFrameTime::GetInstance()->Update();
 			board->Input();
-			board->Update();
-			if (board->IsGameOver())
-				break;
-			Render();
+
+
+			if (CFrameTime::GetInstance()->Update())
+			{
+				float deltaTime = CFrameTime::GetInstance()->GetDeltaTime();
+
+				board->Update();
+				if (board->IsGameOver())
+					break;
+				Render();
+			}
 		}
 	}
 
@@ -128,7 +133,7 @@ HRESULT InitWindow(HINSTANCE hInstance, int nCmdShow)
 
 	// Create window
 	g_hInst = hInstance;
-	RECT rc = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
+	RECT rc = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
 	AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
 
 	g_hWnd = CreateWindow(L"D2DTutWindowClass", L"D2D1 Tutorial 1 : simple app",
@@ -191,38 +196,20 @@ HRESULT InitDevice(void)
 		&g_pRenderTarget);
 	if (FAILED(hr)) return hr;
 
-	hr = CoCreateInstance(CLSID_WICImagingFactory, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&g_pWICFactory));
+	//hr = CoCreateInstance(CLSID_WICImagingFactory, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&g_pWICFactory));
+	//if (FAILED(hr)) return hr;
+	
+	hr = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), reinterpret_cast<IUnknown**>(&g_pDWriteFactory));
 	if (FAILED(hr)) return hr;
 
+	static const WCHAR fontName[] = L"Gabriola";
+	const FLOAT fontSize = 50.0f;
 
-	return hr;
-}
-
-HRESULT LoadBitmapFromFile(PCWSTR _wcFileName, ID2D1Bitmap** _ppBitmap)
-{
-	HRESULT hr = S_OK;
-	IWICBitmapDecoder* pDecoder = nullptr;
-
-	hr = g_pWICFactory->CreateDecoderFromFilename(_wcFileName, NULL, GENERIC_READ, WICDecodeMetadataCacheOnLoad, &pDecoder);
+	hr = g_pDWriteFactory->CreateTextFormat(fontName, NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL,
+		fontSize, L"en-us", &g_pDWTextFormat);
 	if (FAILED(hr)) return hr;
 
-	IWICBitmapFrameDecode* pFrame = nullptr;
-	hr = pDecoder->GetFrame(0, &pFrame);
-	if (FAILED(hr)) return hr;
-
-	IWICFormatConverter* pConverter = nullptr;
-	hr = g_pWICFactory->CreateFormatConverter(&pConverter);
-	if (FAILED(hr)) return hr;
-
-	hr = pConverter->Initialize(pFrame, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, NULL, 0.0f, WICBitmapPaletteTypeCustom);
-	if (FAILED(hr)) return hr;
-
-	hr = g_pRenderTarget->CreateBitmapFromWicBitmap(pConverter, NULL, _ppBitmap);
-	if (FAILED(hr)) return hr;
-
-	if (pConverter) { pConverter->Release(); pConverter = nullptr; }
-	if (pFrame) { pFrame->Release(); pFrame = nullptr; }
-	if (pDecoder) { pDecoder->Release(); pDecoder = nullptr; }
+	hr = g_pRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &g_pBlackBrush);
 
 	return hr;
 }
@@ -236,10 +223,13 @@ void Render()
 	g_pRenderTarget->BeginDraw();
 	g_pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::Aqua));
 
-	//g_pRenderTarget->DrawBitmap(g_pBitmap);
-	//sprite.Render(g_pRenderTarget, &g_pBoard);
-	//board->Render(g_pRenderTarget);
+	D2D1_SIZE_F rtSize = g_pRenderTarget->GetSize();
+
 	board->Render(g_pRenderTarget);
+	std::wstring str = std::to_wstring(CFrameTime::GetInstance()->GetFps());
+	str.append(L" fps");
+	const WCHAR* s = str.c_str();
+	g_pRenderTarget->DrawTextW(s, str.length(), g_pDWTextFormat, D2D1::RectF(0, 0, rtSize.width, rtSize.height), g_pBlackBrush);
 
 	g_pRenderTarget->EndDraw();
 }
@@ -252,10 +242,6 @@ void CleanupDevice()
 	delete player;
 	delete board;
 
-	if (g_pAppleBitmap) g_pAppleBitmap->Release();
-	if (g_pPlayerBitmap) g_pPlayerBitmap->Release();
-	if (g_pBoard) g_pBoard->Release();
-	if (g_pWICFactory) g_pWICFactory->Release();
 	if (g_pRenderTarget) g_pRenderTarget->Release();
 	if (g_pD2DFactory) g_pD2DFactory->Release();
 	CoUninitialize();
